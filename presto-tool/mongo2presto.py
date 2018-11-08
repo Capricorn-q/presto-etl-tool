@@ -6,12 +6,12 @@ import argparse
     mongo 单表数据到 presto(hive) 临时解决方案
     情况特殊：由于mongo版本低于2.6，数据量少，文档结构单一
     稳妥起见请使用开源etl工具
-    python3 m2p.py -m 127.0.0.1:27017/test/user -p 127.0.0.1:10300/test/test_hive/test/user
+    python3 mongo2presto.py -m 127.0.0.1:27017/test/user -p 127.0.0.1:10300/test/test_hive/test/user
 """
 
 
 def init_args():
-    parser = argparse.ArgumentParser(prog='m2p.py', description=' This is a simple mongo 2 presto etl script ')
+    parser = argparse.ArgumentParser(prog='mongo2presto.py', description=' This is a simple mongo 2 presto etl script ')
     parser.add_argument('-m', '--mongo', type=str, action='store', dest='mongo', required=True,
                         help=''' ip:port/db/collection(mongodb-config) ''')
     parser.add_argument('-p', '--presto', type=str, action='store', dest='presto', required=True,
