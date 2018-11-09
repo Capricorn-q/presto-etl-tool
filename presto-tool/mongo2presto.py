@@ -1,6 +1,7 @@
 from pymongo import MongoClient
 import prestodb
 import argparse
+import re
 
 """
     mongo 单表数据到 presto(hive) 临时解决方案
@@ -18,6 +19,30 @@ def init_args():
                         help=''' ip:port/user/catalog/schema/table(presto-config)''')
     args = parser.parse_args()
     return args
+
+
+def hump2underline(hunp_str):
+    '''
+    驼峰形式字符串转成下划线形式
+    :param hunp_str: 驼峰形式字符串
+    :return: 字母全小写的下划线形式字符串
+    '''
+    # 匹配正则，匹配小写字母和大写字母的分界位置
+    p = re.compile(r'([a-z]|\d)([A-Z])')
+    # 这里第二个参数使用了正则分组的后向引用
+    sub = re.sub(p, r'\1_\2', hunp_str).lower()
+    return sub
+
+
+def underline2hump(underline_str):
+    '''
+    下划线形式字符串转成驼峰形式
+    :param underline_str: 下划线形式字符串
+    :return: 驼峰形式字符串
+    '''
+    # 这里re.sub()函数第二个替换参数用到了一个匿名回调函数，回调函数的参数x为一个匹配对象，返回值为一个处理后的字符串
+    sub = re.sub(r'(_\w)', lambda x: x.group(1)[1].upper(), underline_str)
+    return sub
 
 
 def exec(args):
@@ -51,7 +76,8 @@ def exec(args):
     db = client[db_name]
     collection = db[collection_name]
     cursor = collection.find()
-    # count = cursor.count()
+    count = cursor.count()
+    print(count)
     sql = ''
     if col_names:
         sql = 'insert into ' + table + ' ('
@@ -68,6 +94,7 @@ def exec(args):
             insert_sql += value(col_names, col_types, doc, False)
         is_first += 1
 
+    print(sql)
     if insert_sql:
         print(sql + insert_sql)
         with prestodb.dbapi.connect(
@@ -87,18 +114,17 @@ def value(names, types, doc, is_first):
         sql += "("
     else:
         sql += ",("
-
     # 检查是否无匹配
     flag = True
     for name in names:
-        if name in doc.keys():
+        # 检查是否无匹配, TODO 如果数据结构匹配不上，不插入数据，因为使用场景不多，懒得写了
+        if underline2hump(name) in doc.keys():
             l = names.__len__() - 1
             for i in range(l):
-                sql += get(doc, names[i], types[i]) + ','
-            sql += get(doc, names[l], types[l]) + ')'
+                sql += get(doc, underline2hump(names[i]), types[i]) + ','
+            sql += get(doc, underline2hump(names[l]), types[l]) + ')'
             flag = False
             break
-
     if flag:
         return ''
     else:
