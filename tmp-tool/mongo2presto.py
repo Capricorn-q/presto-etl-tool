@@ -5,7 +5,8 @@ import re
 
 """
     mongo 单表数据到 presto(hive) 临时解决方案
-    情况特殊：由于mongo版本低于2.6，数据量少，文档结构单一
+    情况特殊：由于mongo版本低于2.6，或文档结构不遵循presto官方规则，数据量少，文档结构单一
+    如果mongo版本低于2.6，pymongo==2.5
     稳妥起见请使用开源etl工具
     python3 mongo2presto.py -m 127.0.0.1:27017/test/user -p 127.0.0.1:10300/test/test_hive/test/user
 """
@@ -146,5 +147,4 @@ def get(doc, key, type):
 
 
 if __name__ == '__main__':
-    args = init_args()
-    exec(args)
+    exec(init_args())
